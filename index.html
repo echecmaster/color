@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Couleur Un - Clone Final</title>
+    <style>
+        :root {
+            --bg-color: #f4efeb;
+            --panel-bg: #0d0d0d;
+            --text-color: #ffffff;
+            --accent: #f8f1e7;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            user-select: none;
+        }
+
+        #game-container {
+            width: 800px;
+            height: 500px;
+            background-color: var(--panel-bg);
+            border-radius: 20px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+            color: var(--text-color);
+        }
+
+        /* BOUTON RETOUR ACCUEIL DISCRET */
+        .home-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none; /* Caché par défaut */
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            backdrop-filter: blur(5px);
+            transition: all 0.2s;
+        }
+        .home-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.1); }
+
+        .screen {
+            display: none !important;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .screen.active {
+            display: flex !important;
+            opacity: 1;
+        }
+
+        /* --- ACCUEIL --- */
+        #menu-screen {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .logo-container { margin-bottom: 30px; }
+        h1 { font-size: 4rem; margin: 0; font-weight: 700; letter-spacing: -2px; }
+        h1 span { color: #88c0d0; }
+        .subtitle { color: #888; margin-top: 5px; text-transform: uppercase; letter-spacing: 4px; font-size: 0.85rem; }
+        
+        .btn {
+            background-color: var(--accent);
+            color: #111;
+            border: none;
+            padding: 16px 50px;
+            font-size: 0.9rem;
+            font-weight: 800;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn:hover { transform: scale(1.08); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+
+        /* --- MÉMORISATION --- */
+        #memorize-screen { justify-content: space-between; padding: 40px; box-sizing: border-box; }
+        .header-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; }
+        .footer-row { display: flex; justify-content: space-between; align-items: flex-end; }
+        #timer { font-size: 8rem; font-weight: 900; line-height: 0.7; letter-spacing: -4px; }
+
+        /* --- RECRÉATION --- */
+        #color-preview { width: 100%; height: 100%; position: absolute; z-index: 1; }
+        .sliders-panel {
+            position: absolute; left: 30px; top: 50%; transform: translateY(-50%);
+            width: 120px; height: 400px; background: rgba(0, 0, 0, 0.4); border-radius: 25px;
+            display: flex; justify-content: space-evenly; align-items: center; z-index: 10;
+            backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1);
+        }
+        .slider-container { position: relative; width: 25px; height: 320px; display: flex; justify-content: center; }
+        input[type=range] {
+            -webkit-appearance: none; width: 320px; height: 14px; border-radius: 10px;
+            transform: rotate(-90deg); transform-origin: center; position: absolute; top: 153px;
+            cursor: pointer; background: #222;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%;
+            background: white; box-shadow: 0 0 15px rgba(0,0,0,0.5); border: 3px solid rgba(0,0,0,0.2);
+        }
+        #hue-slider { background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00); }
+
+        /* --- RÉSULTATS --- */
+        .color-comparison { display: flex; height: 72%; width: 100%; }
+        .color-box { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; letter-spacing: 1px; }
+        .result-info { height: 28%; display: flex; justify-content: space-around; align-items: center; background: var(--panel-bg); border-top: 1px solid #222; }
+        .score-display { font-size: 4.5rem; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; }
+
+        /* --- FINAL --- */
+        #final-screen { justify-content: center; align-items: center; text-align: center; }
+        .final-score { font-size: 7rem; font-weight: 900; margin: 0; line-height: 1; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    
+    <button class="home-btn" id="global-home-btn" onclick="returnToMenu()">⌂</button>
+
+    <div id="menu-screen" class="screen active">
+        <div class="logo-container">
+            <h1>Couleur <span>un.</span></h1>
+            <div class="subtitle">Mémorisez. Recréez.</div>
+        </div>
+        <button class="btn" onclick="startGame()">Jouer</button>
+    </div>
+
+    <div id="memorize-screen" class="screen">
+        <div class="header-row">
+            <span id="round-indicator-mem">1/5</span>
+            <span style="opacity: 0.3; letter-spacing: 2px;">COLORUNO CLONE</span>
+        </div>
+        <div class="footer-row">
+            <div style="letter-spacing: 3px; font-size: 0.8rem; font-weight: 800;">MÉMORISEZ CETTE NUANCE</div>
+            <div id="timer">5.00</div>
+        </div>
+    </div>
+
+    <div id="recreate-screen" class="screen">
+        <div id="color-preview"></div>
+        <div class="sliders-panel">
+            <div class="slider-container"><input type="range" id="hue-slider" min="0" max="360" value="180"></div>
+            <div class="slider-container"><input type="range" id="sat-slider" min="0" max="100" value="50"></div>
+            <div class="slider-container"><input type="range" id="light-slider" min="0" max="100" value="50"></div>
+        </div>
+        <div style="position: absolute; bottom: 40px; right: 40px; z-index: 20;">
+            <button class="btn" onclick="submitColor()" style="background: white; color: black; padding: 12px 35px;">D'accord</button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="screen">
+        <div class="color-comparison">
+            <div id="target-box" class="color-box"><span>CIBLE</span></div>
+            <div id="player-box" class="color-box"><span>VOTRE CHOIX</span></div>
+        </div>
+        <div class="result-info">
+            <div style="text-align: center;">
+                <div style="color: #555; font-size: 0.75rem; font-weight: 900; letter-spacing: 2px; margin-bottom: 5px;">PRÉCISION</div>
+                <div class="score-display" id="round-score">0.00</div>
+            </div>
+            <button class="btn" onclick="nextRound()" id="next-btn">Suivant</button>
+        </div>
+    </div>
+
+    <div id="final-screen" class="screen">
+        <div style="color: #666; letter-spacing: 5px; font-weight: 800; font-size: 0.9rem; margin-bottom: 10px;">SCORE TOTAL</div>
+        <div class="final-score" id="total-score">0.00</div>
+        <div style="color: #444; margin-bottom: 40px; font-weight: 900; font-size: 1.2rem;">SUR 50.00</div>
+        <button class="btn" onclick="returnToMenu()">Rejouer</button>
+    </div>
+
+</div>
+
+<script>
+    let currentRound = 1, totalScore = 0, targetHSL = {}, timerInterval;
+
+    function showScreen(id) {
+        // Gérer la visibilité du bouton Home
+        const homeBtn = document.getElementById('global-home-btn');
+        homeBtn.style.display = (id === 'menu-screen') ? 'none' : 'flex';
+
+        const allScreens = document.querySelectorAll('.screen');
+        allScreens.forEach(s => {
+            s.style.opacity = '0';
+            setTimeout(() => s.classList.remove('active'), 10);
+        });
+        
+        const target = document.getElementById(id);
+        setTimeout(() => {
+            target.classList.add('active');
+            setTimeout(() => target.style.opacity = '1', 50);
+        }, 100);
+    }
+
+    function returnToMenu() {
+        clearInterval(timerInterval);
+        showScreen('menu-screen');
+    }
+
+    function animateScore(elementId, finalValue, duration = 1200) {
+        const element = document.getElementById(elementId);
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            element.innerText = (easeOut * finalValue).toFixed(2);
+            if (progress < 1) window.requestAnimationFrame(step);
+        };
+        window.requestAnimationFrame(step);
+    }
+
+    function updateVisuals() {
+        const h = document.getElementById('hue-slider').value;
+        const s = document.getElementById('sat-slider').value;
+        const l = document.getElementById('light-slider').value;
+        document.getElementById('color-preview').style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
+        document.getElementById('sat-slider').style.background = `linear-gradient(to right, hsl(${h},0%,${l}%), hsl(${h},100%,${l}%))`;
+        document.getElementById('light-slider').style.background = `linear-gradient(to right, #000, hsl(${h},${s}%,50%), #fff)`;
+    }
+
+    function startGame() {
+        currentRound = 1; totalScore = 0;
+        startRound();
+    }
+
+    function startRound() {
+        targetHSL = { h: Math.random()*360, s: 40+Math.random()*50, l: 30+Math.random()*45 };
+        document.getElementById('round-indicator-mem').innerText = `${currentRound}/5`;
+        document.getElementById('memorize-screen').style.backgroundColor = `hsl(${targetHSL.h}, ${targetHSL.s}%, ${targetHSL.l}%)`;
+        
+        showScreen('memorize-screen');
+
+        let timeLeft = 5.00;
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            timeLeft -= 0.01;
+            document.getElementById('timer').innerText = Math.max(0, timeLeft).toFixed(2);
+            if (timeLeft <= 0) { 
+                clearInterval(timerInterval);
+                document.getElementById('hue-slider').value = 180;
+                document.getElementById('sat-slider').value = 50;
+                document.getElementById('light-slider').value = 50;
+                updateVisuals();
+                showScreen('recreate-screen'); 
+            }
+        }, 10);
+    }
+
+    function submitColor() {
+        const h = parseInt(document.getElementById('hue-slider').value);
+        const s = parseInt(document.getElementById('sat-slider').value);
+        const l = parseInt(document.getElementById('light-slider').value);
+        
+        const hslToRgb = (h,s,l) => {
+            s/=100; l/=100; let k=n=>(n+h/30)%12, a=s*Math.min(l,1-l), f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+            return [f(0), f(8), f(4)];
+        };
+        const rgb1 = hslToRgb(targetHSL.h, targetHSL.s, targetHSL.l);
+        const rgb2 = hslToRgb(h, s, l);
+        const dist = Math.sqrt(rgb1.reduce((acc, v, i) => acc + Math.pow(v - rgb2[i], 2), 0));
+        let score = Math.max(0, 10 * (1 - dist/1.1)); 
+        
+        totalScore += score;
+        
+        document.getElementById('target-box').style.background = `hsl(${targetHSL.h}, ${targetHSL.s}%, ${targetHSL.l}%)`;
+        document.getElementById('player-box').style.background = `hsl(${h}, ${s}%, ${l}%)`;
+        document.getElementById('target-box').style.color = targetHSL.l > 55 ? 'black' : 'white';
+        document.getElementById('player-box').style.color = l > 55 ? 'black' : 'white';
+        
+        showScreen('result-screen');
+        animateScore('round-score', score);
+        
+        document.getElementById('next-btn').innerText = currentRound < 5 ? "Suivant" : "Résultats";
+    }
+
+    function nextRound() {
+        if (currentRound < 5) { currentRound++; startRound(); }
+        else { 
+            showScreen('final-screen');
+            animateScore('total-score', totalScore, 2000);
+        }
+    }
+
+    document.querySelectorAll('input').forEach(i => i.addEventListener('input', updateVisuals));
+</script>
+</body>
+</html>
