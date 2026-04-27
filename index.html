@@ -48,7 +48,7 @@
             height: 40px;
             border-radius: 50%;
             cursor: pointer;
-            display: none; /* Caché par défaut */
+            display: none;
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
@@ -80,11 +80,40 @@
             align-items: center;
             text-align: center;
         }
-        .logo-container { margin-bottom: 30px; }
+        .logo-container { margin-bottom: 25px; }
         h1 { font-size: 4rem; margin: 0; font-weight: 700; letter-spacing: -2px; }
         h1 span { color: #88c0d0; }
         .subtitle { color: #888; margin-top: 5px; text-transform: uppercase; letter-spacing: 4px; font-size: 0.85rem; }
         
+        /* SÉLECTION DE MODE */
+        .modes-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 35px;
+        }
+        .mode-btn {
+            background: transparent;
+            color: #666;
+            border: 2px solid #333;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1.5px;
+            transition: all 0.3s ease;
+        }
+        .mode-btn:hover {
+            border-color: #666;
+            color: #eee;
+        }
+        .mode-btn.active {
+            border-color: #88c0d0;
+            color: #88c0d0;
+            background: rgba(136, 192, 208, 0.1);
+        }
+
         .btn {
             background-color: var(--accent);
             color: #111;
@@ -148,6 +177,13 @@
             <h1>Couleur <span>un.</span></h1>
             <div class="subtitle">Mémorisez. Recréez.</div>
         </div>
+        
+        <div class="modes-container">
+            <button class="mode-btn active" onclick="setMode('normal', this)">Normal</button>
+            <button class="mode-btn" onclick="setMode('hard', this)">Hard</button>
+            <button class="mode-btn" onclick="setMode('endurance', this)">Endurance</button>
+        </div>
+
         <button class="btn" onclick="startGame()">Jouer</button>
     </div>
 
@@ -191,7 +227,7 @@
     <div id="final-screen" class="screen">
         <div style="color: #666; letter-spacing: 5px; font-weight: 800; font-size: 0.9rem; margin-bottom: 10px;">SCORE TOTAL</div>
         <div class="final-score" id="total-score">0.00</div>
-        <div style="color: #444; margin-bottom: 40px; font-weight: 900; font-size: 1.2rem;">SUR 50.00</div>
+        <div id="max-score-display" style="color: #444; margin-bottom: 40px; font-weight: 900; font-size: 1.2rem;">SUR 50.00</div>
         <button class="btn" onclick="returnToMenu()">Rejouer</button>
     </div>
 
@@ -199,9 +235,24 @@
 
 <script>
     let currentRound = 1, totalScore = 0, targetHSL = {}, timerInterval;
+    
+    // Configuration des modes
+    const MODES = {
+        'normal': { time: 5, rounds: 5 },
+        'hard': { time: 3, rounds: 5 },
+        'endurance': { time: 5, rounds: 10 }
+    };
+    let currentMode = MODES['normal'];
+
+    function setMode(modeKey, btnElement) {
+        currentMode = MODES[modeKey];
+        
+        // Mise à jour visuelle des boutons
+        document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+        btnElement.classList.add('active');
+    }
 
     function showScreen(id) {
-        // Gérer la visibilité du bouton Home
         const homeBtn = document.getElementById('global-home-btn');
         homeBtn.style.display = (id === 'menu-screen') ? 'none' : 'flex';
 
@@ -246,18 +297,24 @@
     }
 
     function startGame() {
-        currentRound = 1; totalScore = 0;
+        currentRound = 1; 
+        totalScore = 0;
+        // On prépare le texte du score maximum de l'écran de fin
+        document.getElementById('max-score-display').innerText = `SUR ${(currentMode.rounds * 10).toFixed(2)}`;
         startRound();
     }
 
     function startRound() {
         targetHSL = { h: Math.random()*360, s: 40+Math.random()*50, l: 30+Math.random()*45 };
-        document.getElementById('round-indicator-mem').innerText = `${currentRound}/5`;
+        
+        // Affichage dynamique des manches et du timer
+        document.getElementById('round-indicator-mem').innerText = `${currentRound}/${currentMode.rounds}`;
+        document.getElementById('timer').innerText = currentMode.time.toFixed(2);
         document.getElementById('memorize-screen').style.backgroundColor = `hsl(${targetHSL.h}, ${targetHSL.s}%, ${targetHSL.l}%)`;
         
         showScreen('memorize-screen');
 
-        let timeLeft = 5.00;
+        let timeLeft = currentMode.time;
         clearInterval(timerInterval);
         timerInterval = setInterval(() => {
             timeLeft -= 0.01;
@@ -297,12 +354,15 @@
         showScreen('result-screen');
         animateScore('round-score', score);
         
-        document.getElementById('next-btn').innerText = currentRound < 5 ? "Suivant" : "Résultats";
+        // Gérer l'affichage du bouton en fonction du mode choisi
+        document.getElementById('next-btn').innerText = currentRound < currentMode.rounds ? "Suivant" : "Résultats";
     }
 
     function nextRound() {
-        if (currentRound < 5) { currentRound++; startRound(); }
-        else { 
+        if (currentRound < currentMode.rounds) { 
+            currentRound++; 
+            startRound(); 
+        } else { 
             showScreen('final-screen');
             animateScore('total-score', totalScore, 2000);
         }
